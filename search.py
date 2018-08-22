@@ -11,10 +11,6 @@ parser.add_argument('query', nargs='+', type=str, help='The search term')
 parser.add_argument('-a', '--author', nargs='+', type=str, help='Authors name')
 args = parser.parse_args()
 
-print(args.query)
-if args.author:
-    print(' '.join(args.author))
-
 Color = namedtuple('Color', ['purple', 'cyan', 'darkcyan', 'blue', 'green',
                              'yellow', 'red', 'bold', 'underline', 'end'],
                    defaults=['\033[95m', '\033[96m', '\033[36m', '\033[94m',
@@ -36,15 +32,17 @@ es = Elasticsearch(['localhost'])
 
 def print_res(result, index=None):
     if index is not None:
-        print(i,"Title:\t", result['title'])
-        print("  Description:\t", result['description'])
-        print("  Path: ", result['path'])
+        print(i, color.bold+color.blue+result['title']+color.end)
+        if result['description']:
+            print("  Description:\t", result['description'])
         print(" ", result['highlight'])
+        print("  Path: ", result['path'])
     else:
         print("Title:\t\t", result['title'])
-        print("Description:\t", result['description'])
-        print("Path: ", result['path'])
+        if result['description']:
+            print("Description:\t", result['description'])
         print(result['highlight'])
+        print("Path: ", result['path'])
 
 
 user_search = None
@@ -65,7 +63,7 @@ req_body = {
         "_score": {"order": "desc"}
     },
     "highlight": {
-        "pre_tags"  : [color.bold],
+        "pre_tags"  : [color.bold+color.blue],
         "post_tags" : [color.end],
         "order"     : "score",
         "number_of_fragments" : 1,
@@ -83,7 +81,7 @@ for item in res2['hits']['hits']:
     source = item['_source']
     meta = source.get('meta')
 
-    title     = None
+    title     = 'No title found'
     descr     = None
     os_path   = None
     highlight = None
