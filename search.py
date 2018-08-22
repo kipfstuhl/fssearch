@@ -1,7 +1,19 @@
+#!/usr/bin/env python3
 from elasticsearch import Elasticsearch
 import subprocess
 import sys
 
+from collections import namedtuple
+import argparse
+
+parser = argparse.ArgumentParser(description='Search documents.')
+parser.add_argument('query', nargs='+', type=str, help='The search term')
+parser.add_argument('-a', '--author', nargs='+', type=str, help='Authors name')
+args = parser.parse_args()
+
+print(args.query)
+if args.author:
+    print(' '.join(args.author))
 
 
 es = Elasticsearch(['localhost'])
@@ -17,7 +29,11 @@ def print_res(result, index=None):
         print("Path: ", result['path'])
 
 
-user_search = input("Search term: ")
+user_search = None
+if len(args.query) > 1:
+    user_search = ' '.join(args.query)
+else:
+    user_search = args.query[0]
 
 req_body = {
     "query": {
