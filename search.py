@@ -7,7 +7,7 @@ import argparse
 #from collections import namedtuple
 
 parser = argparse.ArgumentParser(description='Search documents.')
-parser.add_argument('query', nargs='+', type=str, help='The search term')
+parser.add_argument('query', nargs='*', type=str, help='The search term')
 parser.add_argument('-a', '--author', nargs='+', type=str, help='Authors name')
 args = parser.parse_args()
 
@@ -55,7 +55,7 @@ es = Elasticsearch(['localhost'])
 
 def print_res(result, index=None):
     if index is not None:
-        print(i, _c.bold+_c.blue+result['title']+_c.reset)
+        print(index, _c.bold+_c.blue+result['title']+_c.reset)
         if result['description']:
             print("  Description:\t", result['description'])
         print(" ",
@@ -72,8 +72,9 @@ def print_res(result, index=None):
 user_search = None
 if len(args.query) > 1:
     user_search = ' '.join(args.query)
-else:
+elif len(args.query) == 1:
     user_search = args.query[0]
+
 
 def search(query):
     """Execute the query in elasticsearch."""
@@ -168,15 +169,18 @@ def parse_results(result):
     return interesting
 
 
+global interesting
+interesting = []
 
-res = search(user_search)
-interesting = parse_results(res)
-# print the interesting parts of the results
-print("Found", _c.bold + str(res['hits']['total']) + _c.reset, "results")
-print()
-for i, item in enumerate(interesting):
-    print_res(item, i)
+if user_search is not None:
+    res = search(user_search)
+    interesting = parse_results(res)
+    # print the interesting parts of the results
+    print("Found", _c.bold + str(res['hits']['total']) + _c.reset, "results")
     print()
+    for i, item in enumerate(interesting):
+        print_res(item, i)
+        print()
 
 
 import cmd
@@ -198,7 +202,11 @@ class SearchShell(cmd.Cmd):
         'open the document of specified result'
         try:
             number = int(arg.split()[0])
-            subprocess.call(['xdg-open', interesting[number]['path']])
+            if (number < 0) or (number > len(interesting)):
+                print("The number has to be in the range {} - {}"
+                      .format(0, len(interesting)-1))
+            else:
+                subprocess.call(['xdg-open', interesting[number]['path']])
         except ValueError:
             print("Not a number")
 
@@ -211,12 +219,17 @@ class SearchShell(cmd.Cmd):
         user_search = arg
         result = search(user_search)
         interesting = parse_results(result)
-        for i, item in enumerate(interesting):
-            print_res(item, i)
+        # print(interesting)
+        for ind, item in enumerate(interesting):
+            print_res(item, ind)
+            # print(ind, item)
             print()
 
     def default(self, arg):
-        self.do_search(arg)
+        if arg.isdecimal():
+            self.do_open(arg)
+        else:
+            self.do_search(arg)
 
 SearchShell().cmdloop()
 
