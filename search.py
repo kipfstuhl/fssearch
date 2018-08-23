@@ -197,13 +197,19 @@ class SearchShell(cmd.Cmd):
         sys.exit()
 
     def do_q(self, arg):
+        'exit FSSearch'
         self.do_exit(arg)
 
     def do_quit(self, arg):
+        'exit FSSearch'
         self.do_exit(arg)
 
+    def do_h(self, arg):
+        'display help'
+        self.do_help(arg)
+
     def do_open(self, arg):
-        'open the document of specified result'
+        'Open the document of specified result'
         try:
             number = int(arg.split()[0])
             if (number < 0) or (number > len(interesting)):
@@ -218,10 +224,11 @@ class SearchShell(cmd.Cmd):
             print("Not a number")
 
     def do_o(self, arg):
+        'Open the document of specified result'
         self.do_open(arg)
 
     def do_search(self, arg):
-        'search for entered query'
+        'Search for entered query'
         global interesting
         user_search = arg
         result = search(user_search)
@@ -229,13 +236,31 @@ class SearchShell(cmd.Cmd):
         # print(interesting)
         print_result_list(interesting)
 
+    def do_print(self, arg):
+        'Print results'
+        global interesting
+        if interesting:
+            print('\033c', end='')
+            print_result_list(interesting)
+    
+    def do_p(self, arg):
+        'Print results'
+        self.do_print(arg)
+        
     def default(self, arg):
         if arg.isdecimal():
             self.do_open(arg)
         else:
             self.do_search(arg)
 
-    def postcmd(self, stop, lines):
+    def precmd(self, line):
+        if line.split()[0] in ['help', '?', 'h']:
+            print('\033c', end='')
+        return line
+
+    def postcmd(self, stop, line):
+        if line.split()[0] in ['help', '?', 'h']:
+            return stop
         global interesting
         if interesting:
             print('\033c', end='')
