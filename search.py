@@ -2,21 +2,21 @@
 from elasticsearch import Elasticsearch
 import subprocess
 import sys
-
-from collections import namedtuple
 import argparse
+
+#from collections import namedtuple
 
 parser = argparse.ArgumentParser(description='Search documents.')
 parser.add_argument('query', nargs='+', type=str, help='The search term')
 parser.add_argument('-a', '--author', nargs='+', type=str, help='Authors name')
 args = parser.parse_args()
 
-Color = namedtuple('Color', ['purple', 'cyan', 'darkcyan', 'blue', 'green',
-                             'yellow', 'red', 'bold', 'underline', 'end'],
-                   defaults=['\033[95m', '\033[96m', '\033[36m', '\033[94m',
-                             '\033[92m', '\033[93m', '\033[91m', '\033[1m',
-                             '\033[4m', '\033[0m'])
-color = Color()
+# Color = namedtuple('Color', ['purple', 'cyan', 'darkcyan', 'blue', 'green',
+#                              'yellow', 'red', 'bold', 'underline', 'end'],
+#                    defaults=['\033[95m', '\033[96m', '\033[36m', '\033[94m',
+#                              '\033[92m', '\033[93m', '\033[91m', '\033[1m',
+#                              '\033[4m', '\033[0m'])
+# color = Color()
 # PURPLE    = '\033[95m'
 # CYAN      = '\033[96m'
 # DARKCYAN  = '\033[36m'
@@ -75,35 +75,44 @@ if len(args.query) > 1:
 else:
     user_search = args.query[0]
 
-req_body = {
-    "query": {
-        "multi_match" : {
-            "query" : user_search,
-            "fields" : ["content", "title", "author"],
-            "fuzziness" : "AUTO"
-        }
-    },
-    "sort": {
-        "_score": {"order": "desc"}
-    },
-    "highlight": {
-        # "pre_tags"  : [color.bold+color.blue],
-        # "post_tags" : [color.end],
-        # "pre_tags"  : [_c.bold + _c.blue], # for proper coloring use the direct api
-        # "post_tags" : [_c.reset],
-        "pre_tags"  : [ '<highlight>'  ], # for proper coloring use the direct api
-        "post_tags" : [ '</highlight>' ], # shell escapes not working at beginning of string
-        "order"     : "score",
-        "number_of_fragments" : 1,
-        "fields": {
-            "content": {}
-        }
-    },
-    "_source" : ['file.filename', 'path.real', 'meta.title', 'meta.raw.description']
-}
+def search(query):
+    """Execute the query in elasticsearch."""
+    
+    req_body = {
+        "query": {
+            "multi_match" : {
+                "query" : query,
+                "fields" : ["content", "title", "author"],
+                "fuzziness" : "AUTO"
+            }
+        },
+        "sort": {
+            "_score": {"order": "desc"}
+        },
+        "highlight": {
+            # "pre_tags"  : [_c.bold + _c.blue], # for proper coloring use the direct api
+            # "post_tags" : [_c.reset],
+            
+            # for proper coloring use the direct api
+            "pre_tags"  : [ '<highlight>'  ],
+            # shell escapes not working at beginning of string
+            "post_tags" : [ '</highlight>' ],
+            "order"     : "score",
+            "number_of_fragments" : 1,
+            "fields": {
+                "content": {}
+            }
+        },
+        "_source" : ['file.filename', 'path.real', 'meta.title',
+                     'meta.raw.description']
+    }
+    
+    res = es.search(index="test", body=req_body,
+                     _source=['file.filename', 'path.real', 'meta.title',
+                              'meta.raw.description'])
+    return res
 
-res2 = es.search(index="test", body=req_body, _source=['file.filename', 'path.real', 'meta.title', 'meta.raw.description'])
-
+    
 # import urllib.request
 # import json
 
@@ -120,40 +129,50 @@ res2 = es.search(index="test", body=req_body, _source=['file.filename', 'path.re
 # res2 = res_json
 
 
-# parse results
-interesting = []
-for item in res2['hits']['hits']:
-    source = item['_source']
-    meta = source.get('meta')
-
-    title     = 'No title found'
-    descr     = None
-    os_path   = None
-    highlight = None
-
-    if meta is not None:
-        title = meta.get('title') or 'No title found'
-        if meta.get('raw') is not None:
-            descr = meta.get('raw').get('description')
+def parse_results(result):
+    """Parse elasticsearch results.
     
-    path  = source.get('path')
-    if path is not None:
-        os_path = path.get('real')
+    Parse a search result returned from elasticsearch client to return
+    an array of dicts containing only the interesting parts.
+    """
 
-    highlight = item['highlight']['content'][0].replace('\n', ' ')
+    interesting = []
+    for item in result['hits']['hits']:
+        source = item['_source']
+        meta = source.get('meta')
 
-    temp = {
-        'id' :          item['_id'],
-        'title' :       title,
-        'description' : descr,
-        'path' :        os_path,
-        'highlight' :   highlight
-    }
-    interesting.append(temp)
+        title     = 'No title found'
+        descr     = None
+        os_path   = None
+        highlight = None
+
+        if meta is not None:
+            title = meta.get('title') or 'No title found'
+            if meta.get('raw') is not None:
+                descr = meta.get('raw').get('description')
+    
+        path  = source.get('path')
+        if path is not None:
+            os_path = path.get('real')
+
+        highlight = item['highlight']['content'][0].replace('\n', ' ')
+
+        temp = {
+            'id' :          item['_id'],
+            'title' :       title,
+            'description' : descr,
+            'path' :        os_path,
+            'highlight' :   highlight
+        }
+        interesting.append(temp)
+    return interesting
 
 
+
+res = search(user_search)
+interesting = parse_results(res)
 # print the interesting parts of the results
-print("Found", color.bold + str(res2['hits']['total']) + color.end, "results")
+print("Found", _c.bold + str(res['hits']['total']) + _c.reset, "results")
 print()
 for i, item in enumerate(interesting):
     print_res(item, i)
@@ -171,7 +190,7 @@ while True:
         want = int(user_value)
         subprocess.call(["xdg-open", interesting[want]['path']])
     except ValueError:
-        if user_value.decode() in ["q", "quit", "exit"]:
+        if user_value in ["q", "quit", "exit"]:
             break
             # sys.exit()
         else:
