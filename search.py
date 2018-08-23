@@ -178,23 +178,65 @@ for i, item in enumerate(interesting):
     print_res(item, i)
     print()
 
+
+import cmd
+class SearchShell(cmd.Cmd):
+    intro  = 'Enter command. Type ? or help to list commands.\n'
+    prompt = 'FSSearch: '
+
+    def do_exit(self, arg):
+        'exit FSSearch'
+        sys.exit()
+
+    def do_q(self, arg):
+        self.do_exit(arg)
+
+    def do_quit(self, arg):
+        self.do_exit(arg)
+
+    def do_open(self, arg):
+        'open the document of specified result'
+        try:
+            number = int(arg.split()[0])
+            subprocess.call(['xdg-open', interesting[number]['path']])
+        except ValueError:
+            print("Not a number")
+
+    def do_o(self, arg):
+        self.do_open(arg)
+
+    def do_search(self, arg):
+        'search for entered query'
+        global interesting
+        user_search = arg
+        result = search(user_search)
+        interesting = parse_results(result)
+        for i, item in enumerate(interesting):
+            print_res(item, i)
+            print()
+
+    def default(self, arg):
+        self.do_search(arg)
+
+SearchShell().cmdloop()
+
     
 # ask user for opening a search result
 # give the possibility to choose more than one result
-question = "Type number to open, q to exit: "
-user_value = input(question)
+# question = "Type number to open, q to exit: "
+# user_value = input(question)
 
 
-while True:
-    try:
-        want = int(user_value)
-        subprocess.call(["xdg-open", interesting[want]['path']])
-    except ValueError:
-        if user_value in ["q", "quit", "exit"]:
-            break
-            # sys.exit()
-        else:
-            print("Not a number")
+# while True:
+#     try:
+#         want = int(user_value)
+#         subprocess.call(["xdg-open", interesting[want]['path']])
+#     except ValueError:
+#         if user_value in ["q", "quit", "exit"]:
+#             break
+#             # sys.exit()
+#         else:
+#             print("Not a number")
             
-    user_value = input()
+#     user_value = input()
 
