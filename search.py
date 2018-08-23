@@ -210,7 +210,10 @@ class SearchShell(cmd.Cmd):
                 print("The number has to be in the range {} - {}"
                       .format(0, len(interesting)-1))
             else:
-                subprocess.call(['xdg-open', interesting[number]['path']])
+                # subprocess.run(['xdg-open', interesting[number]['path']])
+                # use Popen to have a non-blocking call, i.e. don't
+                # wait for xdg-open to return
+                p = subprocess.Popen(['xdg-open', interesting[number]['path']])
         except ValueError:
             print("Not a number")
 
@@ -252,7 +255,7 @@ SearchShell().cmdloop()
 # while True:
 #     try:
 #         want = int(user_value)
-#         subprocess.call(["xdg-open", interesting[want]['path']])
+#         subprocess.run(["xdg-open", interesting[want]['path']])
 #     except ValueError:
 #         if user_value in ["q", "quit", "exit"]:
 #             break
