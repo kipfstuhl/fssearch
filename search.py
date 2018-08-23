@@ -70,10 +70,27 @@ req_body = {
         "fields": {
             "content": {}
         }
-    }
+    },
+    "_source" : ['file.filename', 'path.real', 'meta.title', 'meta.raw.description']
 }
 
 res2 = es.search(index="test", body=req_body, _source=['file.filename', 'path.real', 'meta.title', 'meta.raw.description'])
+
+# import urllib.request
+# import json
+
+# # decoder = json.JSONDecoder(strict=False)
+# body = json.dumps(req_body).encode('utf-8')
+# req = urllib.request.Request("http://localhost:9200/test/_search", data=body,
+#               headers={"Content-Type" : "application/json"}, method="GET")
+
+# with urllib.request.urlopen(req) as x:
+#     res_string = x.read()
+#     res_json = json.loads(res_string, strict=False)
+#     print(x.status)
+
+# res2 = res_json
+
 
 # parse results
 interesting = []
