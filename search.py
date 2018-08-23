@@ -54,6 +54,7 @@ _c = Colorcodes()
 es = Elasticsearch(['localhost'])
 
 def print_res(result, index=None):
+    """Print one search result"""
     if index is not None:
         print(index, _c.bold+_c.blue+result['title']+_c.reset)
         if result['description']:
@@ -68,6 +69,11 @@ def print_res(result, index=None):
         print(result['highlight'])
         print("Path: ", result['path'])
 
+def print_result_list(results):
+    """Print the complete list of search results"""
+    for i, item in enumerate(results):
+        print_res(item, i)
+        print()
 
 user_search = None
 if len(args.query) > 1:
@@ -178,9 +184,7 @@ if user_search is not None:
     # print the interesting parts of the results
     print("Found", _c.bold + str(res['hits']['total']) + _c.reset, "results")
     print()
-    for i, item in enumerate(interesting):
-        print_res(item, i)
-        print()
+    print_result_list(interesting)
 
 
 import cmd
@@ -220,10 +224,7 @@ class SearchShell(cmd.Cmd):
         result = search(user_search)
         interesting = parse_results(result)
         # print(interesting)
-        for ind, item in enumerate(interesting):
-            print_res(item, ind)
-            # print(ind, item)
-            print()
+        print_result_list(interesting)
 
     def default(self, arg):
         if arg.isdecimal():
