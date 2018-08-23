@@ -232,6 +232,14 @@ class SearchShell(cmd.Cmd):
         else:
             self.do_search(arg)
 
+    def postcmd(self, stop, lines):
+        global interesting
+        if interesting:
+            print('\033c', end='')
+            print_result_list(interesting)
+
+            
+
 SearchShell().cmdloop()
 
     
