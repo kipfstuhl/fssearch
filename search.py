@@ -192,6 +192,9 @@ class SearchShell(cmd.Cmd):
     intro  = 'Enter command. Type ? or help to list commands.\n'
     prompt = 'FSSearch: '
 
+    clear_seq = subprocess.run(['tput', 'clear'], check=True, stdout=subprocess.PIPE).stdout
+    clear_seq = clear_seq.decode()
+    
     def do_exit(self, arg):
         'exit FSSearch'
         sys.exit()
@@ -255,7 +258,7 @@ class SearchShell(cmd.Cmd):
 
     def precmd(self, line):
         if line.split()[0] in ['help', '?', 'h']:
-            print('\033c', end='')
+            print(self.clear_seq, end='')
         return line
 
     def postcmd(self, stop, line):
@@ -263,7 +266,7 @@ class SearchShell(cmd.Cmd):
             return stop
         global interesting
         if interesting:
-            print('\033c', end='')
+            print(self.clear_seq, end='')
             print_result_list(interesting)
 
             
