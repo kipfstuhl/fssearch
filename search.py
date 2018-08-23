@@ -28,14 +28,38 @@ color = Color()
 # UNDERLINE = '\033[4m'
 # END       = '\033[0m'
 
+
+class Colorcodes(object):
+    def __init__(self):
+        try:
+            self.bold = subprocess.check_output("tput bold".split()).decode()
+            self.reset = subprocess.check_output("tput sgr0".split()).decode()
+
+            self.blue = subprocess.check_output("tput setaf 4".split()).decode()
+            self.green = subprocess.check_output("tput setaf 2".split()).decode()
+            self.orange = subprocess.check_output("tput setaf 3".split()).decode()
+            self.red = subprocess.check_output("tput setaf 1".split()).decode()
+        except subprocess.CalledProcessError as e:
+            self.bold = ""
+            self.reset = ""
+
+            self.blue = ""
+            self.green = ""
+            self.orange = ""
+            self.red = ""
+
+_c = Colorcodes()
+
+
 es = Elasticsearch(['localhost'])
 
 def print_res(result, index=None):
     if index is not None:
-        print(i, color.bold+color.blue+result['title']+color.end)
+        print(i, _c.bold+_c.blue+result['title']+_c.reset)
         if result['description']:
             print("  Description:\t", result['description'])
-        print(" ", result['highlight'])
+        print(" ",
+              result['highlight'].replace('<highlight>', _c.blue).replace('</highlight>', _c.reset))
         print("  Path: ", result['path'])
     else:
         print("Title:\t\t", result['title'])
@@ -63,8 +87,12 @@ req_body = {
         "_score": {"order": "desc"}
     },
     "highlight": {
-        "pre_tags"  : [color.bold+color.blue],
-        "post_tags" : [color.end],
+        # "pre_tags"  : [color.bold+color.blue],
+        # "post_tags" : [color.end],
+        # "pre_tags"  : [_c.bold + _c.blue], # for proper coloring use the direct api
+        # "post_tags" : [_c.reset],
+        "pre_tags"  : [ '<highlight>'  ], # for proper coloring use the direct api
+        "post_tags" : [ '</highlight>' ], # shell escapes not working at beginning of string
         "order"     : "score",
         "number_of_fragments" : 1,
         "fields": {
@@ -102,15 +130,18 @@ for item in res2['hits']['hits']:
     descr     = None
     os_path   = None
     highlight = None
+
     if meta is not None:
-        title = meta.get('title')
+        title = meta.get('title') or 'No title found'
         if meta.get('raw') is not None:
             descr = meta.get('raw').get('description')
     
-    path  = source.get('path')    
+    path  = source.get('path')
     if path is not None:
         os_path = path.get('real')
-    highlight = str(item['highlight']['content'][0]).replace('\n', '')
+
+    highlight = item['highlight']['content'][0].replace('\n', ' ')
+
     temp = {
         'id' :          item['_id'],
         'title' :       title,
@@ -119,7 +150,8 @@ for item in res2['hits']['hits']:
         'highlight' :   highlight
     }
     interesting.append(temp)
-    
+
+
 # print the interesting parts of the results
 print("Found", color.bold + str(res2['hits']['total']) + color.end, "results")
 print()
@@ -127,17 +159,23 @@ for i, item in enumerate(interesting):
     print_res(item, i)
     print()
 
+    
 # ask user for opening a search result
 # give the possibility to choose more than one result
+question = "Type number to open, q to exit: "
+user_value = input(question)
+
+
 while True:
-    user_value = input("Type number to open, q to exit\n")
     try:
         want = int(user_value)
+        subprocess.call(["xdg-open", interesting[want]['path']])
     except ValueError:
-        if user_value == "q":
-            sys.exit()
+        if user_value.decode() in ["q", "quit", "exit"]:
+            break
+            # sys.exit()
         else:
             print("Not a number")
             
-    subprocess.call(["xdg-open", interesting[want]['path']])
-            
+    user_value = input()
+
