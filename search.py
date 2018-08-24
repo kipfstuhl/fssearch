@@ -84,28 +84,130 @@ if active == 'inactive':
 
 es = Elasticsearch(['localhost'])
 
+class Searcher():
+    """Class for searching in the elasticsearch index"""
 
-def print_res(result, index=None):
-    """Print one search result"""
-    if index is not None:
-        print(index, _c.bold+_c.blue+result['title']+_c.reset)
-        if result['description']:
-            print("  Description:\t", result['description'])
-        print(" ",
-              result['highlight'].replace('<highlight>', _c.blue).replace('</highlight>', _c.reset))
-        print("  Path: ", result['path'])
-    else:
-        print("Title:\t\t", result['title'])
-        if result['description']:
-            print("Description:\t", result['description'])
-        print(result['highlight'])
-        print("Path: ", result['path'])
+    interesting = []
+    query = ''
+    index = "test"
 
-def print_result_list(results):
-    """Print the complete list of search results"""
-    for i, item in enumerate(results):
-        print_res(item, i)
-        print()
+    
+    def __init__(self, query, index=None):
+        self.query = query
+        if index is not None:
+            self.index = "test"
+        interesting = self.search(query)
+
+    def print_res(self, result, index=None):
+        """Print one search result"""
+        if index is not None:
+            print(index, _c.bold+_c.blue+result['title']+_c.reset)
+            if result['description']:
+                print("  Description:\t", result['description'])
+            print(" ",
+                  result['highlight'].replace('<highlight>', _c.blue).replace('</highlight>', _c.reset))
+            print("  Path: ", result['path'])
+        else:
+            print("Title:\t\t", result['title'])
+            if result['description']:
+                print("Description:\t", result['description'])
+            print(result['highlight'])
+            print("Path: ", result['path'])
+
+    def print_result_list(self, results=None):
+        """Print the complete list of search results"""
+        if results is None:
+            results=self.interesting
+        for i, item in enumerate(results):
+            self.print_res(item, i)
+            print()
+
+    def search(self, query):
+        results = self.raw_search(query)
+        interesting = self.parse_results(results)
+        self.interesting = interesting
+        return interesting
+
+    def raw_search(self, query=None):
+        """Execute the query in elasticsearch."""
+
+        if query is None:
+            query = self.query
+        req_body = {
+            "query": {
+                "multi_match" : {
+                    "query" : query,
+                    "fields" : ["content", "title", "author"],
+                    "fuzziness" : "AUTO"
+                }
+            },
+            "sort": {
+                "_score": {"order": "desc"}
+            },
+            "highlight": {
+                # "pre_tags"  : [_c.bold + _c.blue], # for proper coloring use the direct api
+                # "post_tags" : [_c.reset],
+
+                # for proper coloring use the direct api
+                "pre_tags"  : [ '<highlight>'  ],
+                # shell escapes not working at beginning of string
+                "post_tags" : [ '</highlight>' ],
+                "order"     : "score",
+                "number_of_fragments" : 1,
+                "fields": {
+                    "content": {}
+                }
+            },
+            "_source" : ['file.filename', 'path.real', 'meta.title',
+                         'meta.raw.description']
+        }
+
+        res = es.search(index=self.index, body=req_body,
+                         _source=['file.filename', 'path.real', 'meta.title',
+                                  'meta.raw.description'])
+        return res
+
+
+
+    def parse_results(self, result):
+        """Parse elasticsearch results.
+
+        Parse a search result returned from elasticsearch client to return
+        an array of dicts containing only the interesting parts.
+        """
+
+        interesting = []
+        for item in result['hits']['hits']:
+            source = item['_source']
+            meta = source.get('meta')
+
+            title     = 'No title found'
+            descr     = None
+            os_path   = None
+            highlight = None
+
+            if meta is not None:
+                title = meta.get('title') or 'No title found'
+                if meta.get('raw') is not None:
+                    descr = meta.get('raw').get('description')
+
+            path  = source.get('path')
+            if path is not None:
+                os_path = path.get('real')
+
+            highlight = item['highlight']['content'][0].replace('\n', ' ')
+
+            temp = {
+                'id' :          item['_id'],
+                'title' :       title,
+                'description' : descr,
+                'path' :        os_path,
+                'highlight' :   highlight
+            }
+            interesting.append(temp)
+        return interesting
+
+
 
 user_search = None
 if len(args.query) > 1:
@@ -114,42 +216,6 @@ elif len(args.query) == 1:
     user_search = args.query[0]
 
 
-def search(query):
-    """Execute the query in elasticsearch."""
-    
-    req_body = {
-        "query": {
-            "multi_match" : {
-                "query" : query,
-                "fields" : ["content", "title", "author"],
-                "fuzziness" : "AUTO"
-            }
-        },
-        "sort": {
-            "_score": {"order": "desc"}
-        },
-        "highlight": {
-            # "pre_tags"  : [_c.bold + _c.blue], # for proper coloring use the direct api
-            # "post_tags" : [_c.reset],
-            
-            # for proper coloring use the direct api
-            "pre_tags"  : [ '<highlight>'  ],
-            # shell escapes not working at beginning of string
-            "post_tags" : [ '</highlight>' ],
-            "order"     : "score",
-            "number_of_fragments" : 1,
-            "fields": {
-                "content": {}
-            }
-        },
-        "_source" : ['file.filename', 'path.real', 'meta.title',
-                     'meta.raw.description']
-    }
-    
-    res = es.search(index="test", body=req_body,
-                     _source=['file.filename', 'path.real', 'meta.title',
-                              'meta.raw.description'])
-    return res
 
     
 # import urllib.request
@@ -167,57 +233,26 @@ def search(query):
 
 # res2 = res_json
 
-
-def parse_results(result):
-    """Parse elasticsearch results.
-    
-    Parse a search result returned from elasticsearch client to return
-    an array of dicts containing only the interesting parts.
-    """
-
-    interesting = []
-    for item in result['hits']['hits']:
-        source = item['_source']
-        meta = source.get('meta')
-
-        title     = 'No title found'
-        descr     = None
-        os_path   = None
-        highlight = None
-
-        if meta is not None:
-            title = meta.get('title') or 'No title found'
-            if meta.get('raw') is not None:
-                descr = meta.get('raw').get('description')
-    
-        path  = source.get('path')
-        if path is not None:
-            os_path = path.get('real')
-
-        highlight = item['highlight']['content'][0].replace('\n', ' ')
-
-        temp = {
-            'id' :          item['_id'],
-            'title' :       title,
-            'description' : descr,
-            'path' :        os_path,
-            'highlight' :   highlight
-        }
-        interesting.append(temp)
-    return interesting
-
-
 global interesting
 interesting = []
 
-if user_search is not None:
-    res = search(user_search)
-    interesting = parse_results(res)
-    # print the interesting parts of the results
-    print("Found", _c.bold + str(res['hits']['total']) + _c.reset, "results")
-    print()
-    print_result_list(interesting)
+# if user_search is not None:
+#     res = search(user_search)
+#     interesting = parse_results(res)
+#     # print the interesting parts of the results
+#     print("Found", _c.bold + str(res['hits']['total']) + _c.reset, "results")
+#     print()
+#     print_result_list(interesting)
     
+if user_search is not None:
+    s = Searcher(user_search)
+    s.print_result_list()
+    # print the interesting parts of the results
+    # print("Found", _c.bold + str(res['hits']['total']) + _c.reset, "results")
+    # print()
+    # print_result_list(interesting)
+
+
 
 import cmd
 class SearchShell(cmd.Cmd):
@@ -226,6 +261,9 @@ class SearchShell(cmd.Cmd):
 
     clear_seq = subprocess.run(['tput', 'clear'], check=True, stdout=subprocess.PIPE).stdout
     clear_seq = clear_seq.decode()
+
+    s = Searcher('')
+
     
     print(args.query)
 
@@ -270,10 +308,17 @@ class SearchShell(cmd.Cmd):
         'Search for entered query'
         global interesting
         user_search = arg
-        result = search(user_search)
-        interesting = parse_results(result)
+        self.s.query = user_search
+        self.s.search(user_search)
+        print(self.clear_seq, end='')
+        if user_search is not None:
+            print('Current search: ' + _c.bold+ user_search + _c.reset,
+                  end='\n\n')
+        self.s.print_result_list()
+        # result = search(user_search)
+        # interesting = parse_results(result)
         # print(interesting)
-        print_result_list(interesting)
+        # print_result_list(interesting)
 
     def do_print(self, arg):
         'Print results'
@@ -302,12 +347,17 @@ class SearchShell(cmd.Cmd):
         if line.split() and line.split()[0] in ['help', '?', 'h']:
             # print(self.clear_seq, end='')
             return line
-        global interesting
-        if interesting:
-            # print(self.clear_seq, end='')
-            if user_search is not None:
-                print('Current search:', user_search, end='\n\n')
-            print_result_list(interesting)
+        # global interesting
+        # if interesting:
+        #     # print(self.clear_seq, end='')
+        #     if user_search is not None:
+        #         print('Current search:', user_search, end='\n\n')
+        #     print_result_list(interesting)
+        if user_search is not None:
+            print('Current search: ' + _c.bold+ user_search + _c.reset,
+                  end='\n\n')
+        self.s.print_result_list()
+
         return line
 
     def postcmd(self, stop, line):
