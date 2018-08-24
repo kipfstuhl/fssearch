@@ -89,16 +89,16 @@ es = Elasticsearch(['localhost'])
 class Searcher():
     """Class for searching in the elasticsearch index"""
 
-    interesting = []
-    query = ''
-    index = "test"
+    # interesting = []
+    # query = ''
+    # index = "test"
 
     
     def __init__(self, query, index=None):
-        self.query = query
-        if index is not None:
-            self.index = "test"
-        interesting = self.search(query)
+                # query has to be passed for construction
+        self.query = query or ''
+        self.index = index or "test"
+        self.interesting = self.search(query)
 
     def print_res(self, result, index=None):
         """Print one search result"""
@@ -131,20 +131,26 @@ class Searcher():
             print()
 
     def search(self, query):
+        """Executes the search and parses the results"""
+        if query is not None:
+            self.query = query
         results = self.raw_search(query)
-        interesting = self.parse_results(results)
-        self.interesting = interesting
-        return interesting
+        self.interesting = self.parse_results(results)
+        return self.interesting
 
     def raw_search(self, query=None):
         """Execute the query in elasticsearch."""
 
-        if query is None:
-            query = self.query
+        # update query
+        # if query is None:
+        #     query = self.query
+        if query is not None:
+            self.query = query
+        
         req_body = {
             "query": {
                 "multi_match" : {
-                    "query" : query,
+                    "query" : self.query,
                     "fields" : ["content", "title", "author"],
                     "fuzziness" : "AUTO"
                 }
@@ -213,16 +219,8 @@ class Searcher():
                 'highlight' :   highlight
             }
             interesting.append(temp)
+        self.interesting = interesting
         return interesting
-
-
-
-user_search = None
-if len(args.query) > 1:
-    user_search = ' '.join(args.query)
-elif len(args.query) == 1:
-    user_search = args.query[0]
-
 
 
     
@@ -272,7 +270,14 @@ class SearchShell(cmd.Cmd):
         clear_seq = clear_seq.decode()
     except Exception:
         clear_seq = ''
-    s = Searcher('')
+
+    
+
+    def __init__(self, completekey='tab', stdin=None, stdout=None, query=None):
+        super(SearchShell, self).__init__(
+            completekey=completekey, stdin=stdin, stdout=stdout)
+        # the Searcher class handles None value for query, so just pass it here.
+        self.s = Searcher(query)
 
     
     def do_exit(self, arg):
@@ -296,6 +301,8 @@ class SearchShell(cmd.Cmd):
         try:
             number = int(arg.split()[0])
             if (number < 0) or (number > len(self.s.interesting)):
+                if len(self.s.interesting) == 0:
+                    print("You have to execute a search first.")
                 print("The number has to be in the range {} - {}"
                       .format(0, len(self.s.interesting)-1))
             else:
@@ -327,6 +334,10 @@ class SearchShell(cmd.Cmd):
         # interesting = parse_results(result)
         # print(interesting)
         # print_result_list(interesting)
+
+    def do_s(self, arg):
+        'Search for entered query'
+        self.do_search(arg)
 
     def do_print(self, arg):
         'Print results'
@@ -380,7 +391,14 @@ class SearchShell(cmd.Cmd):
         return stop
             
 
-SearchShell().cmdloop()
+
+user_search = None
+if len(args.query) > 1:
+    user_search = ' '.join(args.query)
+elif len(args.query) == 1:
+    user_search = args.query[0]
+
+SearchShell(query=user_search).cmdloop()
 
     
 # ask user for opening a search result
