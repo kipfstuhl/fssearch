@@ -35,18 +35,40 @@ class Colorcodes(object):
             self.bold = subprocess.check_output("tput bold".split()).decode()
             self.reset = subprocess.check_output("tput sgr0".split()).decode()
 
-            self.blue = subprocess.check_output("tput setaf 4".split()).decode()
-            self.green = subprocess.check_output("tput setaf 2".split()).decode()
+            self.blue   = subprocess.check_output("tput setaf 4".split()).decode()
+            self.green  = subprocess.check_output("tput setaf 2".split()).decode()
             self.orange = subprocess.check_output("tput setaf 3".split()).decode()
-            self.red = subprocess.check_output("tput setaf 1".split()).decode()
+            self.red    = subprocess.check_output("tput setaf 1".split()).decode()
+            self.cyan   = subprocess.check_output("tput setaf 6".split()).decode()
+            self.black  = subprocess.check_output("tput setaf 0".split()).decode()
+            self.white  = subprocess.check_output("tput setaf 7".split()).decode()
+
+            self.blue_bg   = subprocess.check_output("tput setab 4".split()).decode()
+            self.green_bg  = subprocess.check_output("tput setab 2".split()).decode()
+            self.orange_bg = subprocess.check_output("tput setab 3".split()).decode()
+            self.red_bg    = subprocess.check_output("tput setab 1".split()).decode()
+            self.cyan_bg   = subprocess.check_output("tput setab 6".split()).decode()
+            self.black_bg  = subprocess.check_output("tput setab 0".split()).decode()
+            self.white_bg  = subprocess.check_output("tput setab 7".split()).decode()
         except subprocess.CalledProcessError as e:
             self.bold = ""
             self.reset = ""
 
-            self.blue = ""
-            self.green = ""
+            self.blue   = ""
+            self.green  = ""
             self.orange = ""
-            self.red = ""
+            self.red    = ""
+            self.cyan   = ""
+            self.black  = ""
+            self.white  = ""
+
+            self.blue_bg   = ""
+            self.green_bg  = ""
+            self.orange_bg = ""
+            self.red_bg    = ""
+            self.cyan_bg   = ""
+            self.black_bg  = ""
+            self.white_bg  = ""
 
 _c = Colorcodes()
 
