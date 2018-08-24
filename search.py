@@ -126,7 +126,7 @@ class Searcher():
             # array
             print('No results available')
             return
-        for i, item in enumerate(results):
+        for i, item in enumerate(self.interesting):
             self.print_res(item, i)
             print()
 
@@ -252,13 +252,13 @@ elif len(args.query) == 1:
 #     print()
 #     print_result_list(interesting)
     
-if user_search is not None:
-    s = Searcher(user_search)
-    s.print_result_list()
-    # print the interesting parts of the results
-    # print("Found", _c.bold + str(res['hits']['total']) + _c.reset, "results")
-    # print()
-    # print_result_list(interesting)
+# if user_search is not None:
+#     s = Searcher(user_search)
+#     s.print_result_list()
+#     # print the interesting parts of the results
+#     # print("Found", _c.bold + str(res['hits']['total']) + _c.reset, "results")
+#     # print()
+#     # print_result_list(interesting)
 
 
 
@@ -295,14 +295,14 @@ class SearchShell(cmd.Cmd):
         'Open the document of specified result'
         try:
             number = int(arg.split()[0])
-            if (number < 0) or (number > len(interesting)):
+            if (number < 0) or (number > len(self.s.interesting)):
                 print("The number has to be in the range {} - {}"
-                      .format(0, len(interesting)-1))
+                      .format(0, len(self.s.interesting)-1))
             else:
                 # subprocess.run(['xdg-open', interesting[number]['path']])
                 # use Popen to have a non-blocking call, i.e. don't
                 # wait for xdg-open to return
-                p = subprocess.Popen(['xdg-open', interesting[number]['path']])
+                p = subprocess.Popen(['xdg-open', self.s.interesting[number]['path']])
         except ValueError:
             print("Not a number")
         except IndexError:
@@ -322,7 +322,7 @@ class SearchShell(cmd.Cmd):
         if user_search is not None:
             print('Current search: ' + _c.bold+ user_search + _c.reset,
                   end='\n\n')
-        self.s.print_result_list()
+            self.s.print_result_list()
         # result = search(user_search)
         # interesting = parse_results(result)
         # print(interesting)
