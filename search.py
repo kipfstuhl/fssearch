@@ -78,7 +78,9 @@ active = subprocess.run(['systemctl', 'is-active', 'elasticsearch.service'],
 active = active.decode().strip()
 if active == 'inactive':
     print(_c.red+_c.bold+ "ElasticSearch is currently not running.\n" +_c.reset+
-          "Start it now with systemctl", end='\n\n')
+          "Start it now with systemctl\n"+ _c.bold + "Note: " + _c.reset +
+          "it takes a while until the service is available. So a connection error may occur."
+          , end='\n\n')
     subprocess.run(['systemctl', 'start', 'elasticsearch.service'])
 
 
@@ -116,8 +118,14 @@ class Searcher():
 
     def print_result_list(self, results=None):
         """Print the complete list of search results"""
-        if results is None:
+        if (results is None) and (self.interesting == 0):
             results=self.interesting
+        elif len(self.interesting) == 0:
+            # if there are no results print this and end this mehtod,
+            # otherwise it would be attempted to iterate over an empty
+            # array
+            print('No results available')
+            return
         for i, item in enumerate(results):
             self.print_res(item, i)
             print()
@@ -233,8 +241,8 @@ elif len(args.query) == 1:
 
 # res2 = res_json
 
-global interesting
-interesting = []
+# global interesting
+# interesting = []
 
 # if user_search is not None:
 #     res = search(user_search)
@@ -259,14 +267,14 @@ class SearchShell(cmd.Cmd):
     intro  = 'Enter command. Type ? or help to list commands.\n'
     prompt = 'FSSearch: '
 
-    clear_seq = subprocess.run(['tput', 'clear'], check=True, stdout=subprocess.PIPE).stdout
-    clear_seq = clear_seq.decode()
-
+    try:
+        clear_seq = subprocess.run(['tput', 'clear'], check=True, stdout=subprocess.PIPE).stdout
+        clear_seq = clear_seq.decode()
+    except Exception:
+        clear_seq = ''
     s = Searcher('')
 
     
-    print(args.query)
-
     def do_exit(self, arg):
         'exit FSSearch'
         sys.exit()
