@@ -73,14 +73,17 @@ class Colorcodes(object):
 _c = Colorcodes()
 
 # ensure elasticsearch is running
+# no check=True here, as systemctl returns a non zero code when it is not
+# running, mostly 3
 active = subprocess.run(['systemctl', 'is-active', 'elasticsearch.service'],
                         check=False, stdout=subprocess.PIPE).stdout
 active = active.decode().strip()
 if active == 'inactive':
     print(_c.red+_c.bold+ "ElasticSearch is currently not running.\n" +_c.reset+
-          "Start it now with systemctl\n"+ _c.bold + "Note: " + _c.reset +
-          "it takes a while until the service is available. So a connection error may occur."
-          , end='\n\n')
+          "Start it now with systemctl\n"+
+          _c.bold + "Note: " + _c.reset +
+          "it takes a while until the service is available. So a connection" +
+          "error may occur.", end='\n\n')
     subprocess.run(['systemctl', 'start', 'elasticsearch.service'])
 
 
@@ -89,7 +92,7 @@ if active == 'inactive':
 class Searcher():
     """Class for searching in the elasticsearch index"""
 
-    def __init__(self, host=None, index=None, query=None):
+    def __init__(self, query=None, host=None, index=None):
                 # query has to be passed for construction
         self.query = query or ''
         self.index = index or "test"
@@ -208,7 +211,7 @@ class Searcher():
             if path is not None:
                 os_path = path.get('real')
 
-            highlight = item['highlight']['content'][0].replace('\n', ' ')
+            highlight = ' '.join(item['highlight']['content'][0].split())#replace('\n', ' ')
 
             temp = {
                 'id' :          item['_id'],
@@ -264,7 +267,7 @@ class SearchShell(cmd.Cmd):
 
     # some static variables, that are shared for all instances of this class
     # make sense, so these are not created inside __init__
-    intro  = 'Enter command. Type ? or help to list commands.\n'
+    intro  = 'Enter search term(s) or a command. Type ? or help to list commands.' #\n' + "\x1b[A"
     prompt = 'FSSearch: '
     try:
         clear_seq = subprocess.run(['tput', 'clear'], check=True, stdout=subprocess.PIPE).stdout
@@ -277,7 +280,9 @@ class SearchShell(cmd.Cmd):
         super(SearchShell, self).__init__(
             completekey=completekey, stdin=stdin, stdout=stdout)
         # the Searcher class handles None value for query, so just pass it here.
-        self.s = Searcher(query)
+        self.s = Searcher(query=query)
+        if query is not None:
+            self.s.print_result_list()
 
     
     def do_exit(self, arg):
@@ -388,6 +393,7 @@ class SearchShell(cmd.Cmd):
         #     if user_search is not None:
         #         print('Current search:', user_search, end='\n\n')
         #     print_result_list(interesting)
+        print(self.intro)
         return stop
             
 
