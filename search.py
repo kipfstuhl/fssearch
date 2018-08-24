@@ -283,7 +283,6 @@ class SearchShell(cmd.Cmd):
         self.s = Searcher(query=query)
         if query is not None:
             self.s.print_result_list()
-
     
     def do_exit(self, arg):
         'exit FSSearch'
