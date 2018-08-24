@@ -89,7 +89,7 @@ if active == 'inactive':
 class Searcher():
     """Class for searching in the elasticsearch index"""
 
-    def __init__(self, host=None, index=None, query=None):
+    def __init__(self, query=None, host=None, index=None):
                 # query has to be passed for construction
         self.query = query or ''
         self.index = index or "test"
@@ -277,7 +277,7 @@ class SearchShell(cmd.Cmd):
         super(SearchShell, self).__init__(
             completekey=completekey, stdin=stdin, stdout=stdout)
         # the Searcher class handles None value for query, so just pass it here.
-        self.s = Searcher(query)
+        self.s = Searcher(query=query)
 
     
     def do_exit(self, arg):
