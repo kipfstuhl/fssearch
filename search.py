@@ -84,20 +84,19 @@ if active == 'inactive':
     subprocess.run(['systemctl', 'start', 'elasticsearch.service'])
 
 
-es = Elasticsearch(['localhost'])
+
 
 class Searcher():
     """Class for searching in the elasticsearch index"""
 
-    # interesting = []
-    # query = ''
-    # index = "test"
-
-    
-    def __init__(self, query, index=None):
+    def __init__(self, host=None, index=None, query=None):
                 # query has to be passed for construction
         self.query = query or ''
         self.index = index or "test"
+        if host is not None:
+            self.es = Elasticsearch(host)
+        else:
+            self.es = Elasticsearch()
         self.interesting = self.search(query)
 
     def print_res(self, result, index=None):
@@ -176,7 +175,7 @@ class Searcher():
                          'meta.raw.description']
         }
 
-        res = es.search(index=self.index, body=req_body,
+        res = self.es.search(index=self.index, body=req_body,
                          _source=['file.filename', 'path.real', 'meta.title',
                                   'meta.raw.description'])
         return res
