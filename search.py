@@ -261,15 +261,16 @@ class Searcher():
 
 import cmd
 class SearchShell(cmd.Cmd):
+
+    # some static variables, that are shared for all instances of this class
+    # make sense, so these are not created inside __init__
     intro  = 'Enter command. Type ? or help to list commands.\n'
     prompt = 'FSSearch: '
-
     try:
         clear_seq = subprocess.run(['tput', 'clear'], check=True, stdout=subprocess.PIPE).stdout
         clear_seq = clear_seq.decode()
     except Exception:
         clear_seq = ''
-
     
 
     def __init__(self, completekey='tab', stdin=None, stdout=None, query=None):
@@ -371,8 +372,8 @@ class SearchShell(cmd.Cmd):
         #     if user_search is not None:
         #         print('Current search:', user_search, end='\n\n')
         #     print_result_list(interesting)
-        if user_search is not None:
-            print('Current search: ' + _c.bold+ user_search + _c.reset,
+        if self.s.query not in [None, '']:
+            print('Current search: ' + _c.bold+ self.s.query + _c.reset,
                   end='\n\n')
         self.s.print_result_list()
 
