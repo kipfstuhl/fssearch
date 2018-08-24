@@ -72,8 +72,18 @@ class Colorcodes(object):
 
 _c = Colorcodes()
 
+# ensure elasticsearch is running
+active = subprocess.run(['systemctl', 'is-active', 'elasticsearch.service'],
+                        check=False, stdout=subprocess.PIPE).stdout
+active = active.decode().strip()
+if active == 'inactive':
+    print(_c.red+_c.bold+ "ElasticSearch is currently not running.\n" +_c.reset+
+          "Start it now with systemctl", end='\n\n')
+    subprocess.run(['systemctl', 'start', 'elasticsearch.service'])
+
 
 es = Elasticsearch(['localhost'])
+
 
 def print_res(result, index=None):
     """Print one search result"""
