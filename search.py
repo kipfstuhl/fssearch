@@ -207,7 +207,7 @@ if user_search is not None:
     print("Found", _c.bold + str(res['hits']['total']) + _c.reset, "results")
     print()
     print_result_list(interesting)
-
+    
 
 import cmd
 class SearchShell(cmd.Cmd):
@@ -217,6 +217,8 @@ class SearchShell(cmd.Cmd):
     clear_seq = subprocess.run(['tput', 'clear'], check=True, stdout=subprocess.PIPE).stdout
     clear_seq = clear_seq.decode()
     
+    print(args.query)
+
     def do_exit(self, arg):
         'exit FSSearch'
         sys.exit()
@@ -247,6 +249,8 @@ class SearchShell(cmd.Cmd):
                 p = subprocess.Popen(['xdg-open', interesting[number]['path']])
         except ValueError:
             print("Not a number")
+        except IndexError:
+            print("Specify a number for the result to open")
 
     def do_o(self, arg):
         'Open the document of specified result'
@@ -263,10 +267,11 @@ class SearchShell(cmd.Cmd):
 
     def do_print(self, arg):
         'Print results'
-        global interesting
-        if interesting:
-            print('\033c', end='')
-            print_result_list(interesting)
+        # global interesting
+        # if interesting:
+        #     print(self.clear_seq, end='')
+        #     print_result_list(interesting)
+        pass
     
     def do_p(self, arg):
         'Print results'
@@ -279,18 +284,32 @@ class SearchShell(cmd.Cmd):
             self.do_search(arg)
 
     def precmd(self, line):
-        if line.split()[0] in ['help', '?', 'h']:
-            print(self.clear_seq, end='')
+        # if len(line.split()) == 0:
+        #     return line
+        # elif line.split()[0] in ['help', '?', 'h']:
+        #     print(self.clear_seq, end='')
+        print(self.clear_seq, end='')
+        if line.split() and line.split()[0] in ['help', '?', 'h']:
+            # print(self.clear_seq, end='')
+            return line
+        global interesting
+        if interesting:
+            # print(self.clear_seq, end='')
+            if user_search is not None:
+                print('Current search:', user_search, end='\n\n')
+            print_result_list(interesting)
         return line
 
     def postcmd(self, stop, line):
-        if line.split()[0] in ['help', '?', 'h']:
-            return stop
-        global interesting
-        if interesting:
-            print(self.clear_seq, end='')
-            print_result_list(interesting)
-
+        # if line.split() and line.split()[0] in ['help', '?', 'h']:
+        #     return stop
+        # global interesting
+        # if interesting:
+        #     print(self.clear_seq, end='')
+        #     if user_search is not None:
+        #         print('Current search:', user_search, end='\n\n')
+        #     print_result_list(interesting)
+        return stop
             
 
 SearchShell().cmdloop()
