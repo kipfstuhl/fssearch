@@ -9,6 +9,8 @@ import argparse
 parser = argparse.ArgumentParser(description='Search documents.')
 parser.add_argument('query', nargs='*', type=str, help='The search term')
 parser.add_argument('-a', '--author', nargs='+', type=str, help='Authors name')
+parser.add_argument('--index', default="test", type=str, help='The index to search')
+
 args = parser.parse_args()
 
 # Color = namedtuple('Color', ['purple', 'cyan', 'darkcyan', 'blue', 'green',
@@ -403,7 +405,7 @@ if len(args.query) > 1:
 elif len(args.query) == 1:
     user_search = args.query[0]
 
-SearchShell(query=user_search).cmdloop()
+SearchShell(query=user_search, index=args.index).cmdloop()
 
     
 # ask user for opening a search result
