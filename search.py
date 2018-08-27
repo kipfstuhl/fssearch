@@ -9,7 +9,7 @@ import argparse
 parser = argparse.ArgumentParser(description="Search documents.")
 parser.add_argument("query", nargs="*", type=str, help="The search term")
 parser.add_argument("-a", "--author", nargs="+", type=str, help="Authors name")
-parser.add_argument("--index", default="read_uni", type=str, help="Selected index")
+parser.add_argument("--index", default="_all", type=str, help="Selected index")
 args = parser.parse_args()
 
 # Color = namedtuple('Color', ['purple', 'cyan', 'darkcyan', 'blue', 'green',
@@ -78,9 +78,7 @@ _c = Colorcodes()
 # no check=True here, as systemctl returns a non zero code when it is not
 # running, mostly 3
 active = subprocess.run(
-    ["systemctl", "is-active", "elasticsearch.service"],
-    check=False,
-    stdout=subprocess.PIPE,
+    ["systemctl", "is-active", "elasticsearch.service"], check=False, stdout=subprocess.PIPE
 ).stdout
 active = active.decode().strip()
 if active == "inactive":
@@ -184,23 +182,13 @@ class Searcher:
                 "number_of_fragments": 1,
                 "fields": {"content": {}},
             },
-            "_source": [
-                "file.filename",
-                "path.real",
-                "meta.title",
-                "meta.raw.description",
-            ],
+            "_source": ["file.filename", "path.real", "meta.title", "meta.raw.description"],
         }
 
         res = self.es.search(
             index=self.index,
             body=req_body,
-            _source=[
-                "file.filename",
-                "path.real",
-                "meta.title",
-                "meta.raw.description",
-            ],
+            _source=["file.filename", "path.real", "meta.title", "meta.raw.description"],
         )
         return res
 
@@ -230,9 +218,7 @@ class Searcher:
             if path is not None:
                 os_path = path.get("real")
 
-            highlight = " ".join(
-                item["highlight"]["content"][0].split()
-            )  # replace('\n', ' ')
+            highlight = " ".join(item["highlight"]["content"][0].split())  # replace('\n', ' ')
 
             temp = {
                 "id": item["_id"],
@@ -301,9 +287,7 @@ class SearchShell(cmd.Cmd):
         clear_seq = ""
 
     def __init__(self, completekey="tab", stdin=None, stdout=None, query=None, index=None):
-        super(SearchShell, self).__init__(
-            completekey=completekey, stdin=stdin, stdout=stdout
-        )
+        super(SearchShell, self).__init__(completekey=completekey, stdin=stdin, stdout=stdout)
         # the Searcher class handles None value for query, so just pass it here.
         self.s = Searcher(query=query, index=index)
         if query is not None:
