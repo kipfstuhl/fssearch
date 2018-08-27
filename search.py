@@ -119,9 +119,7 @@ class Searcher:
                 print("  Description:\t", result["description"])
             print(
                 " ",
-                result["highlight"]
-                .replace("<highlight>", _c.blue)
-                .replace("</highlight>", _c.reset),
+                result["highlight"].replace("<highlight>", _c.blue).replace("</highlight>", _c.reset),
             )
             print("  Path: ", result["path"])
         else:
@@ -274,14 +272,10 @@ class SearchShell(cmd.Cmd):
 
     # some static variables, that are shared for all instances of this class
     # make sense, so these are not created inside __init__
-    intro = (
-        "Enter search term(s) or a command. Type ? or help to list commands."
-    )  # \n' + "\x1b[A"
+    intro = "Enter search term(s) or a command. Type ? or help to list commands."  # \n' + "\x1b[A"
     prompt = "FSSearch: "
     try:
-        clear_seq = subprocess.run(
-            ["tput", "clear"], check=True, stdout=subprocess.PIPE
-        ).stdout
+        clear_seq = subprocess.run(["tput", "clear"], check=True, stdout=subprocess.PIPE).stdout
         clear_seq = clear_seq.decode()
     except Exception:
         clear_seq = ""
@@ -316,11 +310,7 @@ class SearchShell(cmd.Cmd):
             if (number < 0) or (number > len(self.s.interesting)):
                 if len(self.s.interesting) == 0:
                     print("You have to execute a search first.")
-                print(
-                    "The number has to be in the range {} - {}".format(
-                        0, len(self.s.interesting) - 1
-                    )
-                )
+                print("The number has to be in the range {} - {}".format(0, len(self.s.interesting) - 1))
             else:
                 # subprocess.run(['xdg-open', interesting[number]['path']])
                 # use Popen to have a non-blocking call, i.e. don't
