@@ -15,6 +15,9 @@ Install `requirements.txt`.
 Just run `search.py` with a search term and submit the desired index with the --index flag.
 
 # TODO #
+Improve scrolling the results. This implies proper printing with alignment of two or
+even three digit numbers. Also the choiche for opening should be adjusted.
+
 Add possibility to scroll the results. This means if the first ten are
 not good, make it easy to see the next best matches. This can be done
 using the `from_` argument for searching. The display should make it
