@@ -79,9 +79,9 @@ _c = Colorcodes()
 # running, mostly 3
 active = subprocess.run(
     ["systemctl", "is-active", "elasticsearch.service"], check=False, stdout=subprocess.PIPE
-).stdout
-active = active.decode().strip()
-if active == "inactive":
+).returncode
+
+if active != 0:
     print(
         _c.red + _c.bold
         + "ElasticSearch is currently not running.\n"
