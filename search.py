@@ -269,10 +269,12 @@ class SearchShell(cmd.Cmd):
     def do_open(self, arg):
         "Open the document of specified result"
         try:
-            number = int(arg.split()[0])
+            number = int(arg.split()[0]) % 10 # 10 is the maximum list length
             if (number < 0) or (number > len(self.s.interesting)):
                 if len(self.s.interesting) == 0:
                     print("You have to execute a search first.")
+                # this error statement is somewhat outdated, to be
+                # correct the number has to be in this range modulo 10
                 print("The number has to be in the range {} - {}".format(0, len(self.s.interesting) - 1))
             else:
                 # use Popen to have a non-blocking call, i.e. don't
