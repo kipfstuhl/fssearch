@@ -15,13 +15,8 @@ Install `requirements.txt`.
 Just run `search.py` with a search term and submit the desired index with the --index flag.
 
 # TODO #
-Make `user_search` a variable of `SearchShell`. With this it can be used
-to define a new print function. This will print the search along with
-the results. It will be used in `do_print` and also in `do_search`, it may
-also be used in `precmd`. `postcmd` is not good, as it will overwrite
-everything.
-
-Maybe another class for searching improves the situation. This can be
-used separately for searching, parsing output, and even printing it.
-With this extra class hopefully no globals are necessary anymore; the
-state can be stored in the user interface class `SearchShell`.
+Add possibility to scroll the results. This means if the first ten are
+not good, make it easy to see the next best matches. This can be done
+using the `from_` argument for searching. The display should make it
+somehow clear, that the results shown are not the first results
+returned.
