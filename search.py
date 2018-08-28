@@ -101,11 +101,8 @@ class Searcher:
     def __init__(self, query=None, host=None, index=None):
         # query has to be passed for construction
         self.query = query or ""
-        self.index = index or "test"
-        if host is not None:
-            self.es = Elasticsearch(host)
-        else:
-            self.es = Elasticsearch()
+        self.index = index or "_all"
+        self.es = Elasticsearch(hosts=host)
         self.interesting = self.search(query)
 
     def print_res(self, result, index=None):
@@ -228,41 +225,6 @@ class Searcher:
         return interesting
 
 
-# import urllib.request
-# import json
-
-# # decoder = json.JSONDecoder(strict=False)
-# body = json.dumps(req_body).encode('utf-8')
-# req = urllib.request.Request("http://localhost:9200/test/_search", data=body,
-#               headers={"Content-Type" : "application/json"}, method="GET")
-
-# with urllib.request.urlopen(req) as x:
-#     res_string = x.read()
-#     res_json = json.loads(res_string, strict=False)
-#     print(x.status)
-
-# res2 = res_json
-
-# global interesting
-# interesting = []
-
-# if user_search is not None:
-#     res = search(user_search)
-#     interesting = parse_results(res)
-#     # print the interesting parts of the results
-#     print("Found", _c.bold + str(res['hits']['total']) + _c.reset, "results")
-#     print()
-#     print_result_list(interesting)
-
-# if user_search is not None:
-#     s = Searcher(user_search)
-#     s.print_result_list()
-#     # print the interesting parts of the results
-#     # print("Found", _c.bold + str(res['hits']['total']) + _c.reset, "results")
-#     # print()
-#     # print_result_list(interesting)
-
-
 import cmd
 
 
@@ -310,7 +272,6 @@ class SearchShell(cmd.Cmd):
                     print("You have to execute a search first.")
                 print("The number has to be in the range {} - {}".format(0, len(self.s.interesting) - 1))
             else:
-                # subprocess.run(['xdg-open', interesting[number]['path']])
                 # use Popen to have a non-blocking call, i.e. don't
                 # wait for xdg-open to return
                 p = subprocess.Popen(["xdg-open", self.s.interesting[number]["path"]])
@@ -361,20 +322,10 @@ class SearchShell(cmd.Cmd):
             self.do_search(arg)
 
     def precmd(self, line):
-        # if len(line.split()) == 0:
-        #     return line
-        # elif line.split()[0] in ['help', '?', 'h']:
-        #     print(self.clear_seq, end='')
         print(self.clear_seq, end="")
         if line.split() and line.split()[0] in ["help", "?", "h"]:
             # print(self.clear_seq, end='')
             return line
-        # global interesting
-        # if interesting:
-        #     # print(self.clear_seq, end='')
-        #     if user_search is not None:
-        #         print('Current search:', user_search, end='\n\n')
-        #     print_result_list(interesting)
         if self.s.query not in [None, ""]:
             print("Current search: " + _c.bold + self.s.query + _c.reset, end="\n\n")
         self.s.print_result_list()
@@ -382,14 +333,6 @@ class SearchShell(cmd.Cmd):
         return line
 
     def postcmd(self, stop, line):
-        # if line.split() and line.split()[0] in ['help', '?', 'h']:
-        #     return stop
-        # global interesting
-        # if interesting:
-        #     print(self.clear_seq, end='')
-        #     if user_search is not None:
-        #         print('Current search:', user_search, end='\n\n')
-        #     print_result_list(interesting)
         print(self.intro)
         return stop
 
