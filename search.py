@@ -102,6 +102,7 @@ class Searcher:
         # query has to be passed for construction
         self.query = query or ""
         self.index = index or "_all"
+        self.offset = 0
         self.es = Elasticsearch(hosts=host)
         self.interesting = self.search(query)
 
@@ -133,14 +134,15 @@ class Searcher:
             # array
             print("No results available")
             return
-        for i, item in enumerate(self.interesting):
+        for i, item in enumerate(self.interesting, start=self.offset):
             self.print_res(item, i)
             print()
 
-    def search(self, query):
+    def search(self, query, offset=0):
         """Executes the search and parses the results"""
         if query is not None:
             self.query = query
+        self.offset = offset
         results = self.raw_search(query)
         self.interesting = self.parse_results(results)
         return self.interesting
@@ -176,6 +178,7 @@ class Searcher:
                 "fields": {"content": {}},
             },
             "_source": ["file.filename", "path.real", "meta.title", "meta.raw.description"],
+            "from":    self.offset
         }
 
         res = self.es.search(
@@ -314,6 +317,19 @@ class SearchShell(cmd.Cmd):
     def do_p(self, arg):
         "Print results"
         self.do_print(arg)
+
+    def do_next(self, arg):
+        "Scroll down results"
+        old_offset = self.s.offset
+        self.s.search(self.s.query, offset = old_offset + 10)
+        # new print necessary, otherwise the old list is shown because
+        # of precmd printing
+        print(self.clear_seq, end="")
+        self.s.print_result_list()
+
+    def do_n(self,arg):
+        "Scroll down results"
+        self.do_next(arg)
 
     def default(self, arg):
         if arg.isdecimal():
