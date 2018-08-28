@@ -109,14 +109,14 @@ class Searcher:
     def print_res(self, result, index=None):
         """Print one search result"""
         if index is not None:
-            print(index, _c.bold + _c.blue + result["title"] + _c.reset)
+            print(str(index).rjust(3)+ " " + _c.bold + _c.blue + result["title"] + _c.reset)
             if result["description"]:
-                print("  Description:\t", result["description"])
+                print(" "*4 + "Description:\t", result["description"])
             print(
-                " ",
+                " "*4 +
                 result["highlight"].replace("<highlight>", _c.blue).replace("</highlight>", _c.reset),
             )
-            print("  Path: ", result["path"])
+            print(" "*4 + "Path: ", result["path"])
         else:
             print("Title:\t\t", result["title"])
             if result["description"]:
@@ -325,11 +325,27 @@ class SearchShell(cmd.Cmd):
         # new print necessary, otherwise the old list is shown because
         # of precmd printing
         print(self.clear_seq, end="")
+        print("Current search: " + _c.bold + self.s.query + _c.reset, end="\n\n")
         self.s.print_result_list()
 
     def do_n(self,arg):
         "Scroll down results"
         self.do_next(arg)
+
+    def do_back(self, arg):
+        "Scroll up results"
+        old_offset = self.s.offset
+        new_offset = max(old_offset - 10, 0)
+        self.s.search(self.s.query, offset =new_offset)
+        # new print necessary, otherwise the old list is shown because
+        # of precmd printing
+        print(self.clear_seq, end="")
+        print("Current search: " + _c.bold + self.s.query + _c.reset, end="\n\n")
+        self.s.print_result_list()
+
+    def do_b(self,arg):
+        "Scroll up results"
+        self.do_back(arg)
 
     def default(self, arg):
         if arg.isdecimal():
