@@ -33,43 +33,43 @@ args = parser.parse_args()
 class Colorcodes(object):
     def __init__(self):
         try:
-            self.bold = subprocess.check_output("tput bold".split()).decode()
-            self.reset = subprocess.check_output("tput sgr0".split()).decode()
+            self.bold      = subprocess.check_output("tput bold".split()).decode()
+            self.reset     = subprocess.check_output("tput sgr0".split()).decode()
 
-            self.blue = subprocess.check_output("tput setaf 4".split()).decode()
-            self.green = subprocess.check_output("tput setaf 2".split()).decode()
-            self.orange = subprocess.check_output("tput setaf 3".split()).decode()
-            self.red = subprocess.check_output("tput setaf 1".split()).decode()
-            self.cyan = subprocess.check_output("tput setaf 6".split()).decode()
-            self.black = subprocess.check_output("tput setaf 0".split()).decode()
-            self.white = subprocess.check_output("tput setaf 7".split()).decode()
+            self.blue      = subprocess.check_output("tput setaf 4".split()).decode()
+            self.green     = subprocess.check_output("tput setaf 2".split()).decode()
+            self.orange    = subprocess.check_output("tput setaf 3".split()).decode()
+            self.red       = subprocess.check_output("tput setaf 1".split()).decode()
+            self.cyan      = subprocess.check_output("tput setaf 6".split()).decode()
+            self.black     = subprocess.check_output("tput setaf 0".split()).decode()
+            self.white     = subprocess.check_output("tput setaf 7".split()).decode()
 
-            self.blue_bg = subprocess.check_output("tput setab 4".split()).decode()
-            self.green_bg = subprocess.check_output("tput setab 2".split()).decode()
+            self.blue_bg   = subprocess.check_output("tput setab 4".split()).decode()
+            self.green_bg  = subprocess.check_output("tput setab 2".split()).decode()
             self.orange_bg = subprocess.check_output("tput setab 3".split()).decode()
-            self.red_bg = subprocess.check_output("tput setab 1".split()).decode()
-            self.cyan_bg = subprocess.check_output("tput setab 6".split()).decode()
-            self.black_bg = subprocess.check_output("tput setab 0".split()).decode()
-            self.white_bg = subprocess.check_output("tput setab 7".split()).decode()
+            self.red_bg    = subprocess.check_output("tput setab 1".split()).decode()
+            self.cyan_bg   = subprocess.check_output("tput setab 6".split()).decode()
+            self.black_bg  = subprocess.check_output("tput setab 0".split()).decode()
+            self.white_bg  = subprocess.check_output("tput setab 7".split()).decode()
         except subprocess.CalledProcessError as e:
-            self.bold = ""
-            self.reset = ""
+            self.bold      = ""
+            self.reset     = ""
 
-            self.blue = ""
-            self.green = ""
-            self.orange = ""
-            self.red = ""
-            self.cyan = ""
-            self.black = ""
-            self.white = ""
+            self.blue      = ""
+            self.green     = ""
+            self.orange    = ""
+            self.red       = ""
+            self.cyan      = ""
+            self.black     = ""
+            self.white     = ""
 
-            self.blue_bg = ""
-            self.green_bg = ""
+            self.blue_bg   = ""
+            self.green_bg  = ""
             self.orange_bg = ""
-            self.red_bg = ""
-            self.cyan_bg = ""
-            self.black_bg = ""
-            self.white_bg = ""
+            self.red_bg    = ""
+            self.cyan_bg   = ""
+            self.black_bg  = ""
+            self.white_bg  = ""
 
 
 _c = Colorcodes()
@@ -83,14 +83,11 @@ active = subprocess.run(
 active = active.decode().strip()
 if active == "inactive":
     print(
-        _c.red
-        + _c.bold
+        _c.red + _c.bold
         + "ElasticSearch is currently not running.\n"
         + _c.reset
         + "Start it now with systemctl\n"
-        + _c.bold
-        + "Note: "
-        + _c.reset
+        + _c.bold + "Note: " + _c.reset
         + "it takes a while until the service is available. So a connection"
         + "error may occur.",
         end="\n\n",
@@ -163,8 +160,8 @@ class Searcher:
         req_body = {
             "query": {
                 "multi_match": {
-                    "query": self.query,
-                    "fields": ["content", "title", "author"],
+                    "query":     self.query,
+                    "fields":    ["content", "title", "author"],
                     "fuzziness": "AUTO",
                 }
             },
@@ -173,10 +170,11 @@ class Searcher:
                 # "pre_tags"  : [_c.bold + _c.blue], # for proper coloring use the direct api
                 # "post_tags" : [_c.reset],
                 # for proper coloring use the direct api
-                "pre_tags": ["<highlight>"],
-                # shell escapes not working at beginning of string
+                # shell escapes not working at beginning of string, this can be
+                # replaced later
+                "pre_tags":  ["<highlight>"],
                 "post_tags": ["</highlight>"],
-                "order": "score",
+                "order":     "score",
                 "number_of_fragments": 1,
                 "fields": {"content": {}},
             },
@@ -202,9 +200,9 @@ class Searcher:
             source = item["_source"]
             meta = source.get("meta")
 
-            title = "No title found"
-            descr = None
-            os_path = None
+            title     = "No title found"
+            descr     = None
+            os_path   = None
             highlight = None
 
             if meta is not None:
@@ -216,14 +214,14 @@ class Searcher:
             if path is not None:
                 os_path = path.get("real")
 
-            highlight = " ".join(item["highlight"]["content"][0].split())  # replace('\n', ' ')
+            highlight = " ".join(item["highlight"]["content"][0].split())
 
             temp = {
-                "id": item["_id"],
-                "title": title,
+                "id":          item["_id"],
+                "title":       title,
                 "description": descr,
-                "path": os_path,
-                "highlight": highlight,
+                "path":        os_path,
+                "highlight":   highlight,
             }
             interesting.append(temp)
         self.interesting = interesting
@@ -272,7 +270,7 @@ class SearchShell(cmd.Cmd):
 
     # some static variables, that are shared for all instances of this class
     # make sense, so these are not created inside __init__
-    intro = "Enter search term(s) or a command. Type ? or help to list commands."  # \n' + "\x1b[A"
+    intro  = "Enter search term(s) or a command. Type ? or help to list commands."  # \n' + "\x1b[A"
     prompt = "FSSearch: "
     try:
         clear_seq = subprocess.run(["tput", "clear"], check=True, stdout=subprocess.PIPE).stdout
