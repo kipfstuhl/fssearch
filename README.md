@@ -10,6 +10,9 @@ information is used, so it may work even if the index has another
 format. For using this programm you must install FSCrawler and
 ElasticSearch first and index your documents with FSCrawler.
 
+# Howto use #
+Install `requirements.txt`.
+Just run `search.py` with a search term and submit the desired index with the --index flag.
 
 # TODO #
 Make `user_search` a variable of `SearchShell`. With this it can be used
