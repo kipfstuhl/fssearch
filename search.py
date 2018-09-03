@@ -12,6 +12,7 @@ parser.add_argument("--index", default="_all", type=str,
                     "default is to use all indices")
 args = parser.parse_args()
 
+# ANSI escape sequences for color output
 # PURPLE    = '\033[95m'
 # CYAN      = '\033[96m'
 # DARKCYAN  = '\033[36m'
@@ -25,6 +26,7 @@ args = parser.parse_args()
 
 
 class Colorcodes(object):
+    """Class for storing escape sequences as returned by tput."""
     def __init__(self):
         try:
             self.bold      = subprocess.check_output("tput bold".split()).decode()
@@ -81,25 +83,24 @@ if active != 0:
         + "Start it with systemctl:\n"
         + "systemctl start elasticsearch.service\n"
         + _c.bold + "Note: " + _c.reset
-        + "it takes a while until the service is available. So a connection"
+        + "It takes a while until the service is available. So a connection"
         + "error may occur at first attempt to retry.",
         end="\n\n",
     )
     sys.exit(1)
-    # do not start the service, if started and the code is further
+    # do not start the service, if started and the code below is
     # executed an error will occur
     # subprocess.run(["systemctl", "start", "elasticsearch.service"])
 
 
 class Searcher:
-    """Class for searching in the elasticsearch index"""
+    """Class for searching in elasticsearch"""
 
     def __init__(self, query=None, host=None, index=None):
-        # query has to be passed for construction
-        self.query = query or ""
-        self.index = index or "_all"
-        self.offset = 0
-        self.es = Elasticsearch(hosts=host)
+        self.query       = query or ""
+        self.index       = index or "_all"
+        self.offset      = 0
+        self.es          = Elasticsearch(hosts=host)
         self.interesting = self.search(query)
 
     def print_res(self, result, index=None):
@@ -107,10 +108,12 @@ class Searcher:
         if index is not None:
             print("{:>3}".format(index)+ " " + _c.bold + _c.blue + result["title"] + _c.reset)
             if result["description"]:
-                print(" "*4 + "Description:\t", result["description"])
+                print(" "*4 + "Description: " + result["description"])
             print(
                 " "*4 +
-                result["highlight"].replace("<highlight>", _c.blue).replace("</highlight>", _c.reset),
+                result["highlight"]
+                .replace("<highlight>", _c.blue)
+                .replace("</highlight>", _c.reset)
             )
             print(" "*4 + "Path: " +  result["path"])
         else:
@@ -134,7 +137,12 @@ class Searcher:
             print()
 
     def search(self, query, offset=0):
-        """Executes the search and parses the results"""
+        """Executes the search and parses the results
+        
+        query:   the string to search for
+        offset:  where to start the results, e.g. first returned result is not
+                 the result with the highest score but the offset-th best
+        """
         if query is not None:
             self.query = query
         self.offset = offset
@@ -143,7 +151,10 @@ class Searcher:
         return self.interesting
 
     def raw_search(self, query=None):
-        """Execute the query in elasticsearch."""
+        """Execute the query in elasticsearch.
+        
+        Return raw values as Elasticsearch delivers them.
+        """
 
         # update query
         # if query is None:
@@ -189,7 +200,6 @@ class Searcher:
         Parse a search result returned from elasticsearch client to return
         an array of dicts containing only the interesting parts.
         """
-
         interesting = []
         for item in result["hits"]["hits"]:
             source = item["_source"]
@@ -262,9 +272,12 @@ class SearchShell(cmd.Cmd):
         self.do_help(arg)
 
     def do_open(self, arg):
-        """Open the document of specified result
-The numbers are displayed next to each serch result. The given number should be the displayed number or the last digit, i.e. 1 works also for result number 11.
-"""
+        """Open the document of specified result.
+        
+        The numbers are displayed next to each serch result. The given number
+        should be the displayed number or the last digit, i.e. 1 works also for
+        result number 11.
+        """
         try:
             number = int(arg.split()[0]) % 10 # 10 is the maximum list length
             if (number < 0) or (number > len(self.s.interesting)-1):
@@ -273,8 +286,9 @@ The numbers are displayed next to each serch result. The given number should be 
                 # this error statement is somewhat outdated, to be
                 # correct the number has to be in this range modulo 10
                 print(_c.bold +
-                      "The number has to be in the range {} - {}".format(0+self.s.offset, len(self.s.interesting) - 1 + self.s.offset) +
-                      _c.reset)
+                      "The number has to be in the range {} - {}"
+                      .format(0+self.s.offset, len(self.s.interesting) - 1 + self.s.offset)
+                      + _c.reset)
             else:
                 # use Popen to have a non-blocking call, i.e. don't
                 # wait for xdg-open to return
@@ -359,6 +373,10 @@ The numbers are displayed next to each serch result. The given number should be 
         return line
 
     def postcmd(self, stop, line):
+        if (line.split() is not None
+            and line.split()[0] in ["help", "?", "h"]
+            and len(line.split()) > 1):
+            print()             # make it readable
         print(self.intro)
         return stop
 
