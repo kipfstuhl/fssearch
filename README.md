@@ -12,7 +12,16 @@ ElasticSearch first and index your documents with FSCrawler.
 
 # Howto use #
 Install `requirements.txt`.
-Just run `search.py` with a search term and submit the desired index with the --index flag.
+Just run `search.py` with a search term and submit the desired index
+with the --index flag.
 
 # TODO #
+Provide possibility to search for an author explicitly. This may be
+possible via a `bool` search with a `must_match` part for the author
+and a `multi_match` part for the usual search string.
 
+The author can be given directly as a command line parameter, more
+important it is also necessary be able to search for the author in the
+interactive part of the program. Therefore the search query has to be
+parsed, for example it may or may not be a good idea to treat
+everything after a single letter 'a' as the authors name.
