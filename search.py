@@ -83,7 +83,10 @@ if active != 0:
         + "error may occur at first attempt to retry.",
         end="\n\n",
     )
-    subprocess.run(["systemctl", "start", "elasticsearch.service"])
+    sys.exit(1)
+    # do not start the service, if started and the code is further
+    # executed an error will occur
+    # subprocess.run(["systemctl", "start", "elasticsearch.service"])
 
 
 class Searcher:
