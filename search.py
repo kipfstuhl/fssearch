@@ -6,8 +6,10 @@ import argparse
 
 parser = argparse.ArgumentParser(description="Search documents.")
 parser.add_argument("query", nargs="*", type=str, help="The search term")
-parser.add_argument("-a", "--author", nargs="+", type=str, help="Authors name")
-parser.add_argument("--index", default="_all", type=str, help="Selected index")
+# parser.add_argument("-a", "--author", nargs="+", type=str, help="Authors name")
+parser.add_argument("--index", default="_all", type=str,
+                    help="Elasticsearch index in which the search is executed, "
+                    "default is to use all indices")
 args = parser.parse_args()
 
 # PURPLE    = '\033[95m'
