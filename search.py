@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
+
 from elasticsearch import Elasticsearch
 import subprocess
 import sys
 import argparse
+import cmd
 
 parser = argparse.ArgumentParser(description="Search documents.")
 parser.add_argument("query", nargs="*", type=str, help="The search term")
@@ -233,9 +235,6 @@ class Searcher:
         return interesting
 
 
-import cmd
-
-
 class SearchShell(cmd.Cmd):
 
     # some static variables, that are shared for all instances of this class
@@ -276,8 +275,7 @@ class SearchShell(cmd.Cmd):
         
         The numbers are displayed next to each serch result. The given number
         should be the displayed number or the last digit, i.e. 1 works also for
-        result number 11.
-        """
+        result number 11."""
         try:
             number = int(arg.split()[0]) % 10 # 10 is the maximum list length
             if (number < 0) or (number > len(self.s.interesting)-1):
