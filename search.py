@@ -4,20 +4,12 @@ import subprocess
 import sys
 import argparse
 
-# from collections import namedtuple
-
 parser = argparse.ArgumentParser(description="Search documents.")
 parser.add_argument("query", nargs="*", type=str, help="The search term")
 parser.add_argument("-a", "--author", nargs="+", type=str, help="Authors name")
 parser.add_argument("--index", default="_all", type=str, help="Selected index")
 args = parser.parse_args()
 
-# Color = namedtuple('Color', ['purple', 'cyan', 'darkcyan', 'blue', 'green',
-#                              'yellow', 'red', 'bold', 'underline', 'end'],
-#                    defaults=['\033[95m', '\033[96m', '\033[36m', '\033[94m',
-#                              '\033[92m', '\033[93m', '\033[91m', '\033[1m',
-#                              '\033[4m', '\033[0m'])
-# color = Color()
 # PURPLE    = '\033[95m'
 # CYAN      = '\033[96m'
 # DARKCYAN  = '\033[36m'
@@ -83,13 +75,12 @@ active = subprocess.run(
 
 if active != 0:
     print(
-        _c.red + _c.bold
-        + "ElasticSearch is currently not running.\n"
-        + _c.reset
-        + "Start it now with systemctl\n"
+        _c.red + _c.bold + "ElasticSearch is currently not running.\n" + _c.reset
+        + "Start it with systemctl:\n"
+        + "systemctl start elasticsearch.service\n"
         + _c.bold + "Note: " + _c.reset
         + "it takes a while until the service is available. So a connection"
-        + "error may occur.",
+        + "error may occur at first attempt to retry.",
         end="\n\n",
     )
     subprocess.run(["systemctl", "start", "elasticsearch.service"])
@@ -109,14 +100,14 @@ class Searcher:
     def print_res(self, result, index=None):
         """Print one search result"""
         if index is not None:
-            print(str(index).rjust(3)+ " " + _c.bold + _c.blue + result["title"] + _c.reset)
+            print("{:>3}".format(index)+ " " + _c.bold + _c.blue + result["title"] + _c.reset)
             if result["description"]:
                 print(" "*4 + "Description:\t", result["description"])
             print(
                 " "*4 +
                 result["highlight"].replace("<highlight>", _c.blue).replace("</highlight>", _c.reset),
             )
-            print(" "*4 + "Path: ", result["path"])
+            print(" "*4 + "Path: " +  result["path"])
         else:
             print("Title:\t\t", result["title"])
             if result["description"]:
@@ -126,14 +117,13 @@ class Searcher:
 
     def print_result_list(self, results=None):
         """Print the complete list of search results"""
-        if (results is None) and (self.interesting == 0):
-            results = self.interesting
-        elif len(self.interesting) == 0:
+        if len(self.interesting) == 0:
             # if there are no results print this and end this mehtod,
             # otherwise it would be attempted to iterate over an empty
             # array
             print("No results available")
             return
+        
         for i, item in enumerate(self.interesting, start=self.offset):
             self.print_res(item, i)
             print()
@@ -235,7 +225,7 @@ class SearchShell(cmd.Cmd):
 
     # some static variables, that are shared for all instances of this class
     # make sense, so these are not created inside __init__
-    intro  = "Enter search term(s) or a command. Type ? or help to list commands."  # \n' + "\x1b[A"
+    intro  = "Enter search term(s) or a command. Type ? or help to list commands."
     prompt = "FSSearch: "
     try:
         clear_seq = subprocess.run(["tput", "clear"], check=True, stdout=subprocess.PIPE).stdout
@@ -267,15 +257,19 @@ class SearchShell(cmd.Cmd):
         self.do_help(arg)
 
     def do_open(self, arg):
-        "Open the document of specified result"
+        """Open the document of specified result
+The numbers are displayed next to each serch result. The given number should be the displayed number or the last digit, i.e. 1 works also for result number 11.
+"""
         try:
             number = int(arg.split()[0]) % 10 # 10 is the maximum list length
-            if (number < 0) or (number > len(self.s.interesting)):
+            if (number < 0) or (number > len(self.s.interesting)-1):
                 if len(self.s.interesting) == 0:
                     print("You have to execute a search first.")
                 # this error statement is somewhat outdated, to be
                 # correct the number has to be in this range modulo 10
-                print("The number has to be in the range {} - {}".format(0, len(self.s.interesting) - 1))
+                print(_c.bold +
+                      "The number has to be in the range {} - {}".format(0+self.s.offset, len(self.s.interesting) - 1 + self.s.offset) +
+                      _c.reset)
             else:
                 # use Popen to have a non-blocking call, i.e. don't
                 # wait for xdg-open to return
@@ -286,7 +280,7 @@ class SearchShell(cmd.Cmd):
             print("Specify a number for the result to open")
 
     def do_o(self, arg):
-        "Open the document of specified result"
+        "Open the document of specified result\nSee documentation for open."
         self.do_open(arg)
 
     def do_search(self, arg):
@@ -299,10 +293,6 @@ class SearchShell(cmd.Cmd):
         if user_search is not None:
             print("Current search: " + _c.bold + user_search + _c.reset, end="\n\n")
             self.s.print_result_list()
-        # result = search(user_search)
-        # interesting = parse_results(result)
-        # print(interesting)
-        # print_result_list(interesting)
 
     def do_s(self, arg):
         "Search for entered query"
@@ -310,17 +300,15 @@ class SearchShell(cmd.Cmd):
 
     def do_print(self, arg):
         "Print results"
-        # global interesting
-        # if interesting:
-        #     print(self.clear_seq, end='')
-        #     print_result_list(interesting)
+        # Nothing to do here. Bevore every command is executed the
+        # reult list is printed in function precmd.
         pass
 
     def do_p(self, arg):
         "Print results"
         self.do_print(arg)
 
-    def do_next(self, arg):
+    def do_forward(self, arg):
         "Scroll down results"
         old_offset = self.s.offset
         self.s.search(self.s.query, offset = old_offset + 10)
@@ -330,9 +318,9 @@ class SearchShell(cmd.Cmd):
         print("Current search: " + _c.bold + self.s.query + _c.reset, end="\n\n")
         self.s.print_result_list()
 
-    def do_n(self,arg):
+    def do_f(self,arg):
         "Scroll down results"
-        self.do_next(arg)
+        self.do_forward(arg)
 
     def do_back(self, arg):
         "Scroll up results"
@@ -358,12 +346,11 @@ class SearchShell(cmd.Cmd):
     def precmd(self, line):
         print(self.clear_seq, end="")
         if line.split() and line.split()[0] in ["help", "?", "h"]:
-            # print(self.clear_seq, end='')
+            # early return without printing results
             return line
         if self.s.query not in [None, ""]:
             print("Current search: " + _c.bold + self.s.query + _c.reset, end="\n\n")
         self.s.print_result_list()
-
         return line
 
     def postcmd(self, stop, line):
@@ -378,23 +365,3 @@ elif len(args.query) == 1:
     user_search = args.query[0]
 
 SearchShell(query=user_search, index=args.index).cmdloop()
-
-
-# ask user for opening a search result
-# give the possibility to choose more than one result
-# question = "Type number to open, q to exit: "
-# user_value = input(question)
-
-
-# while True:
-#     try:
-#         want = int(user_value)
-#         subprocess.run(["xdg-open", interesting[want]['path']])
-#     except ValueError:
-#         if user_value in ["q", "quit", "exit"]:
-#             break
-#             # sys.exit()
-#         else:
-#             print("Not a number")
-
-#     user_value = input()
